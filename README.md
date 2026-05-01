@@ -1,59 +1,216 @@
-# WSHC — Entra ID Zero Trust IaC Lab
+# WSHC Zero Trust IaC Lab
 
-**Author:** Will Chang, Sr. IT Operations Engineer  
-**GitHub:** https://github.com/willshchang/WSHC-Entra-IaC-Zero-Trust-Lab
+**Author:** Will Chang, Customer Success Engineer  
+**GitHub:** https://github.com/willshchang/WSHC-ZeroTrust-IaC-Lab  
+**Tailnet:** hair-squeaker.ts.net
 
 ---
 
 ## Overview
 
-A personal lab project demonstrating enterprise-grade Microsoft Entra ID 
-(formerly Azure Active Directory) identity infrastructure, built entirely 
-with Terraform IaC (Infrastructure as Code) and secured with a Zero Trust network architecture.
+A personal Zero Trust infrastructure lab demonstrating enterprise-grade 
+identity and network security — built entirely with Infrastructure as Code.
 
-This lab simulates a real-world identity migration for TinyCo — a 
-fictional 89-person startup — covering the full identity lifecycle from 
-HR data ingestion to automated user provisioning, SSO across multiple 
-SaaS platforms, and network-level Zero Trust enforcement via Tailscale.
+The lab is structured in two layers that work together as a complete 
+Zero Trust architecture:
 
----
+- **Entra IAM** — Microsoft Entra ID tenant managing 90 users, dynamic 
+  ABAC groups, RBAC, Conditional Access, and SSO for multiple SaaS 
+  applications. Fully deployed via Terraform IaC.
 
-## What This Lab Demonstrates
+- **Tailscale** — Zero Trust network layer managing site-to-site subnet 
+  routing, identity-driven SSH, ACL policy, and device enrollment. 
+  Fully configured via Terraform IaC.
 
-| Capability | Implementation |
-|---|---|
-| **Infrastructure as Code** | Terraform — full Entra ID environment deployable in under 5 minutes |
-| **Zero Trust Architecture** | Two-layer model — Tailscale gates infrastructure, Entra SSO gates SaaS |
-| **Dynamic Identity** | ABAC (Attribute-Based Access Control) via Entra dynamic groups |
-| **Self-Healing Provisioning** | HR CSV → ETL pipeline → Terraform → Entra → auto group assignment |
-| **SSO Integrations** | SAML + OIDC across Tailscale, Mattermost, Tableau, Elastic |
-| **SCIM Provisioning** | Automated user lifecycle management via Tableau SCIM |
-| **Security Model** | Conditional Access, MFA enforcement, least privilege RBAC |
-| **Linux Administration** | Azure VM, Docker, Tailscale VPN, SSH hardening |
+![Zero Trust Network Architecture](./Tailscale/docs/wshc_zero_trust_network_architecture.png)
 
 ---
 
 ## Architecture
 
-### Zero Trust — Two Layers
+### Two-Layer Zero Trust Model
 
-**Layer 1 — Network (Tailscale)**  
-Internal resources (Azure VM, Mattermost) are unreachable from the 
-public internet. SSH port 22 is closed. Access requires an active 
-Tailscale VPN connection authenticated via Entra ID.
+| Layer | Tool | What it enforces |
+|---|---|---|
+| **Identity** | Microsoft Entra ID | Who can authenticate — SSO, MFA, RBAC, Conditional Access |
+| **Network** | Tailscale | What authenticated devices can reach — ACL policy, least privilege |
 
-**Layer 2 — Identity (Entra ID SSO)**  
-Cloud SaaS applications (Tableau, Elastic) are protected by Entra ID 
-SSO via SAML or OIDC. MFA is enforced on every sign-in via 
-Conditional Access.
+Neither layer trusts the other implicitly. A user must pass both 
+identity verification (Entra ID → Tailscale SSO) AND network access 
+control (Tailscale ACL policy) before reaching any resource.
 
-![Security Architecture](./docs/tinyco_security_architecture.png)
+### Lab Topology
+Terraform IaC
+↓ manages both layers
+Microsoft Entra ID (identity)  +  Tailscale (network)
+↓                                   ↓
+Site A — Azure VM                Site B — Home LAN
+tinyco-vm (tag:server)           Apple TV x2 (tag:subnet-router)
+Tailscale SSH                    HA subnet routing 192.168.1.0/24
+100.93.4.6                       primary: 100.109.140.74
+failover: 100.122.120.115
 
-### Identity Journey
+---
 
-From HR data to app access — fully automated:
+## Repository Structure
+WSHC-ZeroTrust-IaC-Lab/
+│
+├── README.md                        ← you are here
+│
+├── Entra IAM/                       ← identity infrastructure
+│   ├── Entra_IAM_README.md          ← full Entra IAM documentation
+│   ├── terraform/                   ← Entra ID IaC (users, groups, RBAC, SSO)
+│   ├── scripts/                     ← ETL pipeline, gallery lookup
+│   └── docs/                        ← admin and user documentation
+│
+└── Tailscale/                       ← network infrastructure
+├── terraform/                   ← Tailscale IaC (ACL, tags, DNS, routes, keys)
+│   ├── providers.tf
+│   ├── variables.tf
+│   ├── acl.tf
+│   ├── tags.tf
+│   ├── dns.tf
+│   ├── tailnet_settings.tf
+│   ├── subnet-routes.tf
+│   └── keys.tf
+└── docs/                        ← network and IaC documentation
+├── iac/                     ← Terraform IaC docs (one per tf file)
+├── 01-Subnet_Router_Setup_and_Troubleshooting.md
+├── 02-ACL_Tags_and_Access_Control.md
+├── 03-Network_Architecture.md
+├── 04-Patterns_From_My_Field.md
+└── 05-SSH_Setup_and_Troubleshooting.md
 
-![Identity Journey](./docs/tinyco_identity_journey.png)
+---
+
+## Tailscale — Quick Start
+
+### Prerequisites (manual — IaC boundary)
+
+```bash
+# 1. Create Tailscale account at tailscale.com
+# 2. Install Tailscale on each device:
+
+# Linux VM
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up --authkey=$(terraform output -raw vm_auth_key) \
+  --ssh --accept-routes --advertise-exit-node
+
+# Windows / macOS / iOS / Android
+# Download from tailscale.com/download or App Store
+# Sign in with your identity provider
+
+# Apple TV (subnet router)
+# App Store → Tailscale → Settings → Enable Subnet Router
+
+# Linux client — accept subnet routes
+sudo tailscale set --accept-routes
+```
+
+### Deploy Tailscale IaC
+
+```bash
+cd Tailscale/terraform
+
+# 1. Create OAuth client at tailscale.com/admin/settings/oauth
+#    Required scopes: Devices (Core+Tags+Routes), Policy File,
+#    DNS, Auth Keys, Networking Settings — all Write
+#    Add tags: tag:server, tag:subnet-router, tag:terraform
+
+# 2. Copy and fill in variables
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your OAuth credentials and device names
+
+# 3. Deploy
+terraform init
+terraform plan
+terraform apply
+
+# 4. Retrieve VM auth key for enrollment
+terraform output -raw vm_auth_key
+```
+
+### What Terraform manages
+
+| File | What it configures |
+|---|---|
+| `providers.tf` | Tailscale provider, OAuth authentication |
+| `variables.tf` | All variables — zero hardcoded values |
+| `acl.tf` | ACL grants, SSH rules, tag ownership |
+| `tags.tf` | Device tag assignments |
+| `dns.tf` | MagicDNS |
+| `tailnet_settings.tf` | HTTPS certificates, device auto-updates |
+| `subnet-routes.tf` | Subnet route approvals (HA pair) |
+| `keys.tf` | Auth key generation for VM enrollment |
+
+### IaC Boundary
+
+Terraform manages Tailnet configuration. Device installation and 
+enrollment are manual prerequisites — same honest boundary as any 
+production IaC deployment.
+
+| Step | Method |
+|---|---|
+| Install Tailscale on devices | Manual — CLI or App Store |
+| Enroll devices into Tailnet | Manual — `tailscale up` or app login |
+| Enable subnet router on Apple TV | Manual — Tailscale app settings |
+| Enable Tailscale SSH on VM | Manual — `sudo tailscale set --ssh` |
+| **All Tailnet configuration** | **Terraform** ✅ |
+
+---
+
+## Entra IAM — Quick Start
+
+The Entra IAM layer manages identity for 90 users across 9 teams 
+with full RBAC, dynamic ABAC groups, Conditional Access, and SSO 
+for Tailscale, Mattermost, Tableau, and Elastic.
+
+See the full documentation:  
+[Entra IAM/Entra_IAM_README.md](./Entra%20IAM/Entra_IAM_README.md)
+
+---
+
+## Key Design Decisions
+
+### Zero hardcode — fully portable
+No device IDs, user names, or credentials exist in any `.tf` file. 
+All values are injected via `terraform.tfvars` — gitignored, never 
+committed. Swap the variables file and the same code deploys to 
+any Tailnet.
+
+### Data sources over hardcoded IDs
+Device IDs are looked up dynamically at plan time using 
+`data "tailscale_device"` — IDs never hardcoded. If a device is 
+re-enrolled, the data source fetches the new ID automatically.
+
+### Import blocks for existing state
+Tailscale creates default ACL and DNS preferences on every new 
+Tailnet. Import blocks bring these into Terraform state before 
+managing them — preventing "resource already exists" errors and 
+making the codebase safe to run against any Tailnet.
+
+### tag:terraform — OAuth manager tag
+Tailscale OAuth clients cannot generate auth keys for tags they 
+don't own. `tag:terraform` is a manager tag assigned to the OAuth 
+client — it owns `tag:server` and `tag:subnet-router`, giving 
+Terraform permission to generate tagged auth keys via IaC.
+
+### Secret sprawl prevention
+OAuth credentials live only in `terraform.tfvars` — gitignored 
+and never committed. In production, secrets would be injected via 
+CI/CD environment variables or a secrets manager (Azure Key Vault, 
+HashiCorp Vault). The code itself contains zero secrets.
+
+---
+
+## Security Notes
+
+- No credentials, PII, or sensitive data in this repository
+- `terraform.tfvars` is gitignored — all secrets stay local
+- SSH port 22 closed to public internet — Tailscale SSH only
+- ACL policy enforces least privilege — implicit deny by default
+- All app access enforced via Entra ID group assignments and 
+  Conditional Access policies
 
 ---
 
@@ -62,82 +219,11 @@ From HR data to app access — fully automated:
 | Layer | Technology |
 |---|---|
 | **Identity** | Microsoft Entra ID (E5) |
-| **IaC** | Terraform (azuread + azurerm providers) |
-| **Network** | Tailscale (Zero Trust VPN, exit node) |
+| **Network** | Tailscale (personal plan, hair-squeaker.ts.net) |
+| **IaC** | Terraform (azuread + azurerm + tailscale providers) |
 | **VM** | Azure (Ubuntu 24.04, Standard B2s, Canada Central) |
-| **Chat** | Mattermost (Docker Compose + Postgres 15, SAML SSO) |
-| **Analytics** | Tableau Cloud (SAML SSO + SCIM provisioning) |
-| **Observability** | Elastic Cloud — Kibana (SAML SSO) |
 | **Scripting** | Bash (ETL pipeline, gallery lookup) |
 | **Version Control** | GitHub |
-
----
-
-## Repository Structure
-```
-WSHC-Entra-IaC-Zero-Trust-Lab/
-│
-├── README.md
-├── scripts/
-│   ├── 00-hr-data-etl.sh        ← HR data pipeline (run before terraform)
-│   └── 01-gallery-lookup.sh     ← Microsoft gallery app search utility
-│
-├── terraform/
-│   ├── providers.tf              ← Azure + Entra provider config
-│   ├── variables.tf              ← Variable definitions (zero hardcoded values)
-│   ├── terraform.tfvars         ← Values (gitignored)
-│   ├── users.tf                  ← CSV-driven user provisioning
-│   ├── groups.tf                 ← Dynamic ABAC groups + static admin groups
-│   ├── rbac.tf                   ← Role assignments + app access matrix
-│   ├── conditional-access.tf     ← MFA + legacy auth policies
-│   ├── tailscale.tf              ← Tailscale app reference
-│   ├── mattermost.tf             ← Mattermost SAML registration
-│   ├── tableau.tf                ← Tableau SAML registration
-│   ├── elastic.tf                ← Elastic SAML registration
-│   └── apps-stub.tf              ← 10 stub app registrations
-│
-└── docs/
-├── ARCHITECTURE.md           ← Technical decisions + design patterns
-├── admin/
-│   ├── 01-setup-guide.md     ← Full environment recreation guide
-│   ├── 02-security-model.md  ← Security + privilege model
-│   └── 03-provisioning.md    ← User lifecycle management
-└── user/
-├── 01-getting-started.md
-└── 02-tailscale-troubleshooting.md
-```
----
-
-## Key Design Decisions
-
-### Zero-Hardcode Architecture
-No employee names, team names, or company data exists in any `.tf` 
-file. All identity data flows from gitignored CSV files — mirroring 
-a production HR system SCIM feed. Swap the CSV and the entire 
-codebase deploys for any organisation.
-
-### ABAC Dynamic Groups — Self-Healing Identity
-Group membership is driven by Entra's ABAC engine, not manual 
-Terraform assignments. Change a user's `department` attribute → 
-Entra automatically moves them between groups within 5–15 minutes. 
-No `terraform apply` needed for routine HR changes.
-
-### setproduct RBAC Matrix
-A single Terraform loop manages all group-to-app assignments using 
-`setproduct()`. Add a new app → all groups get access automatically. 
-Add a new group → it's included in all app assignments instantly.
-
-### Gallery-First App Registration
-Microsoft Entra Gallery apps come pre-configured with correct SSO 
-protocols and permissions. Custom registrations default to OIDC — 
-incompatible with many SaaS SAML implementations. Always search 
-the gallery first.
-
-### Dropzone ETL Pipeline
-HR CSV exports use a staged dropzone architecture — files are 
-explicitly placed in `incoming/` by an admin, sanitised by the 
-ETL script, then staged in `data/` for Terraform. No wildcard 
-searches, no accidental mass deprovisioning risk.
 
 ---
 
@@ -145,19 +231,10 @@ searches, no accidental mass deprovisioning risk.
 
 | Goal | Document |
 |---|---|
-| Understand architecture and design decisions | [ARCHITECTURE.md](./docs/ARCHITECTURE.md) |
-| Recreate the environment from scratch | [01-setup-guide.md](./docs/admin/01-setup-guide.md) |
-| Understand the security and privilege model | [02-security-model.md](./docs/admin/02-security-model.md) |
-| Manage users, groups, and applications | [03-provisioning.md](./docs/admin/03-provisioning.md) |
-| End user onboarding guide | [01-getting-started.md](./docs/user/01-getting-started.md) |
-| Tailscale VPN troubleshooting | [02-tailscale-troubleshooting.md](./docs/user/02-tailscale-troubleshooting.md) |
-
----
-
-## Security Notes
-
-- No credentials, PII, or sensitive data exists in this repository
-- Employee CSV data is gitignored — never committed to version control
-- `terraform.tfvars` is gitignored — all secrets stay local
-- SSH port 22 is closed to the public internet — VM accessible via Tailscale only
-- All app access enforced via Entra ID group assignments and Conditional Access
+| Understand the full network architecture | [03-Network_Architecture.md](./Tailscale/docs/03-Network_Architecture.md) |
+| Tailscale IaC setup and troubleshooting | [Tailscale/docs/iac/](./Tailscale/docs/iac/) |
+| Subnet router setup and troubleshooting | [01-Subnet_Router_Setup_and_Troubleshooting.md](./Tailscale/docs/01-Subnet_Router_Setup_and_Troubleshooting.md) |
+| ACL policy and tags | [02-ACL_Tags_and_Access_Control.md](./Tailscale/docs/02-ACL_Tags_and_Access_Control.md) |
+| Tailscale SSH | [05-SSH_Setup_and_Troubleshooting.md](./Tailscale/docs/05-SSH_Setup_and_Troubleshooting.md) |
+| VPN patterns and real-world use cases | [04-Patterns_From_My_Field.md](./Tailscale/docs/04-Patterns_From_My_Field.md) |
+| Entra IAM full documentation | [Entra IAM/Entra_IAM_README.md](./Entra%20IAM/Entra_IAM_README.md) |
