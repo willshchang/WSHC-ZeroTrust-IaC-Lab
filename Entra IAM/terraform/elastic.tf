@@ -14,7 +14,7 @@ resource "azuread_application" "elastic" {
     description          = "Standard Access to Elastic"
     display_name         = "Standard User"
     enabled              = true
-    id                   = "33333333-3333-3333-3333-333333333333" 
+    id                   = "33333333-3333-3333-3333-333333333333"
     value                = "User"
   }
 

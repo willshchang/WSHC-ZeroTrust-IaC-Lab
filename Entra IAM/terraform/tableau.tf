@@ -10,7 +10,7 @@ resource "azuread_application" "tableau" {
   # [SAML IDENTIFIER / ENTITY ID]
   # Using interpolation to build the exact metadata URL
   identifier_uris = ["https://sso.online.tableau.com/public/sp/metadata/${var.app_urls["tableau"]}"]
-  
+
   # REQUIRED: This creates the "User" permission.
   # We use a unique UUID for Tableau so it stays distinct in your logs.
   app_role {
@@ -18,7 +18,7 @@ resource "azuread_application" "tableau" {
     description          = "Standard Access to Tableau"
     display_name         = "Standard User"
     enabled              = true
-    id                   = "44444444-4444-4444-4444-444444444444" 
+    id                   = "44444444-4444-4444-4444-444444444444"
     value                = "User"
   }
 

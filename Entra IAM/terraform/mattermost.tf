@@ -19,7 +19,7 @@ resource "azuread_application" "mattermost" {
     description          = "Standard Access to Mattermost"
     display_name         = "Standard User"
     enabled              = true
-    id                   = "22222222-2222-2222-2222-222222222222" 
+    id                   = "22222222-2222-2222-2222-222222222222"
     value                = "User"
   }
 

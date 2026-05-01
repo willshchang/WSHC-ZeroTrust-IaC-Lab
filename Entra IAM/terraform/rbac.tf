@@ -23,9 +23,9 @@ resource "azurerm_role_assignment" "azure_roles" {
     team => role_id if contains(keys(azuread_group.teams), team)
   }
 
-  scope                = data.azurerm_subscription.current.id
-  role_definition_id   = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${each.value}"
-  principal_id         = azuread_group.teams[each.key].object_id
+  scope              = data.azurerm_subscription.current.id
+  role_definition_id = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/${each.value}"
+  principal_id       = azuread_group.teams[each.key].object_id
 }
 
 # ============================================================
@@ -48,12 +48,12 @@ locals {
   # 2. The Keys: Map the App Names to their specific Permission Locks (App Roles)
   app_role_ids = {
     # Tailscale is a Gallery App with no custom roles, so we use the Entra ID "Default Access" lock
-    "Tailscale"  = "18d14569-c3bd-439b-9a66-3a2aee01d14f"
-    
+    "Tailscale" = "18d14569-c3bd-439b-9a66-3a2aee01d14f"
+
     # Custom apps use the explicit locks we built
-    "Mattermost" = "22222222-2222-2222-2222-222222222222" 
-    "Elastic"    = "33333333-3333-3333-3333-333333333333" 
-    "Tableau"    = "44444444-4444-4444-4444-444444444444" 
+    "Mattermost" = "22222222-2222-2222-2222-222222222222"
+    "Elastic"    = "33333333-3333-3333-3333-333333333333"
+    "Tableau"    = "44444444-4444-4444-4444-444444444444"
   }
 
   # 3. The Matrix Engine: Multiplies every Team by every App

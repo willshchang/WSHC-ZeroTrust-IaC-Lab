@@ -28,7 +28,7 @@ terraform {
   required_providers {
     tailscale = {
       source  = "tailscale/tailscale"
-      version = "~> 0.18"  # bump from 0.17 to get https_enabled
+      version = "~> 0.18" # bump from 0.17 to get https_enabled
     }
   }
 }
@@ -56,4 +56,4 @@ terraform {
 provider "tailscale" {
   oauth_client_id     = var.oauth_client_id
   oauth_client_secret = var.oauth_client_secret
-}# Terraform Validate CI
+} # Terraform Validate CI

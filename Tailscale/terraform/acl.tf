@@ -63,11 +63,11 @@ resource "tailscale_acl" "policy" {
     # Add additional tags as infrastructure grows:
     # "tag:database", "tag:monitoring", "tag:build-server"
     # ==========================================================
- tagOwners = {
-  "tag:terraform"         = [var.admin_email]
-  (var.tag_server)        = ["tag:terraform"]
-  (var.tag_subnet_router) = ["tag:terraform"]
-}
+    tagOwners = {
+      "tag:terraform"         = [var.admin_email]
+      (var.tag_server)        = ["tag:terraform"]
+      (var.tag_subnet_router) = ["tag:terraform"]
+    }
 
     # ==========================================================
     # GRANTS — Network Access Rules
@@ -178,7 +178,7 @@ resource "tailscale_acl" "policy" {
     # ==========================================================
     tests = [
       {
-        src    = var.admin_email
+        src = var.admin_email
         accept = [
           "${var.tag_server}:22",
           "${var.tag_subnet_router}:80",

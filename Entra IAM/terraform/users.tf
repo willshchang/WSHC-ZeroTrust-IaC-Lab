@@ -75,18 +75,18 @@ data "azuread_user" "primary_admin" {
 resource "azuread_user" "breakglass" {
   user_principal_name = "${var.grader_account_prefix}@${var.domain_name}"
   mail_nickname       = var.grader_account_prefix
-  
+
   # Dynamically split "admin.test" into "Admin" and "Test"
   # title() capitalizes the first letter; split() breaks the string at the dot
   display_name = title(replace(var.grader_account_prefix, ".", " "))
   given_name   = title(split(".", var.grader_account_prefix)[0])
   surname      = title(split(".", var.grader_account_prefix)[1])
-  
+
   mail = "${var.grader_account_prefix}@${var.domain_name}"
 
   # Password & Security Settings
   password              = var.admin_password
-  force_password_change = false 
+  force_password_change = false
   account_enabled       = true
 
   # Organization Mapping

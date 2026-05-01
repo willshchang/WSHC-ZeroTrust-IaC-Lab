@@ -88,7 +88,7 @@ variable "grader_account_prefix" {
 variable "app_urls" {
   description = "A map linking App Keys to their primary FQDNs (e.g., Tailscale addresses)"
   type        = map(string)
-  default     = {
+  default = {
     "mattermost" = "tinyco-vm.tail7ee901.ts.net"
     "tableau"    = "55fb207b-97b5-4e4a-b3ba-52aabbce0a63/25fa8ac1-2ce8-4476-bd67-572dfba144ae"
     "elastic"    = "tinyco-prod-cluster-3acb9f.kb.westus2.azure.elastic-cloud.com"

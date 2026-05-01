@@ -39,8 +39,8 @@ resource "azuread_group" "teams" {
   # The Rule: "If the user's Entra 'department' field equals this group's name, add them."
   # NEW SYNTAX: The rule and processing state are now wrapped in this block
   dynamic_membership {
-    enabled = true                                    # This replaces processing_state = "On"
-    rule = "(user.department -eq \"${each.value}\")"  # This replaces membership_rule
+    enabled = true                                      # This replaces processing_state = "On"
+    rule    = "(user.department -eq \"${each.value}\")" # This replaces membership_rule
   }
 }
 
@@ -73,11 +73,11 @@ resource "azuread_group_member" "grader_access" {
 resource "azuread_group" "admin_groups" {
   for_each = var.entra_role_map
 
-  display_name       = "${var.company_name}-${each.key}-Admins (Static)"
-  security_enabled   = true
-  
+  display_name     = "${var.company_name}-${each.key}-Admins (Static)"
+  security_enabled = true
+
   # This is the magic key that allows Entra Role assignment
-  assignable_to_role = true 
+  assignable_to_role = true
 }
 
 # ============================================================
@@ -91,7 +91,7 @@ resource "azuread_group" "admin_groups" {
 resource "azuread_group_member" "csv_admin_members" {
   # Filter the employee list to ONLY include people in ITOps or Security
   for_each = {
-    for key, emp in local.employees : key => emp 
+    for key, emp in local.employees : key => emp
     if contains(keys(var.entra_role_map), emp.team)
   }
 
