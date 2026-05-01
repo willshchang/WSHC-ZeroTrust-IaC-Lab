@@ -1,7 +1,7 @@
 # WSHC — Entra ID Zero Trust IaC Lab
 
 **Author:** Will Chang, Sr. IT Operations Engineer  
-**GitHub:** https://github.com/willshchang/WSHC-Entra-IaC-Zero-Trust-Lab
+**GitHub:** https://github.com/willshchang/WSHC-ZeroTrust-IaC-Lab
 
 ---
 

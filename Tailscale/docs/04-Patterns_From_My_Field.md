@@ -4,7 +4,7 @@
 **Author:** Will Chang, Tailscale Customer Success Engineer  
 **Audience:** IT Administrator / End User Education  
 **Last Updated:** April 2026  
-**Repository:** https://github.com/willshchang/WSHC-Entra-IaC-Zero-Trust-Lab  
+**Repository:** https://github.com/willshchang/WSHC-ZeroTrust-IaC-Lab  
 **Official Reference:** https://tailscale.com/blog/how-tailscale-works
 
 ---

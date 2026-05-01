@@ -4,12 +4,12 @@
 **Author:** Will Chang, Tailscale Customer Success Engineer  
 **Audience:** IT Administrator / Tailscale CSE Reference  
 **Last Updated:** April 2026  
-**Repository:** https://github.com/willshchang/WSHC-Entra-IaC-Zero-Trust-Lab  
+**Repository:** https://github.com/willshchang/WSHC-ZeroTrust-IaC-Lab  
 **Official Reference:** https://tailscale.com/docs
 
 ---
 
-![TinyCo Zero Trust Network Architecture](../tinyco_zero_trust_network_architecture.png)
+![Zero Trust IaC Network Architecture](../wshc_zero_trust_network_architecture.png)
 
 ## Overview
 
